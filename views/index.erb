@@ -4,15 +4,8 @@
   <meta charset="UTF-8">
   <title>掲示板アプリでAjax</title>
   <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
-  
-  <script>
-    window.addEventListener('DOMContentLoaded', function(){
-			//var sendid = null;
-    	alert("よみこれたよ");
-		});
-</script>
 </head>
-<body style="width:60%;margin:0 auto;text-align:center;">
+<body style="width:60%;margin:0 auto;text-align:center;" id="main">
   <h1>掲示板アプリでAjax</h1>
   <% if !current_user.nil? %>
     <ul>
@@ -20,21 +13,16 @@
       <li><a href="/signout">ログアウト</a></li>
     </ul>
     
-    <div class="comment-form" id="list">
-      <input type="hidden" id="user-id" value="<%= current_user.name %>">
-      <input type="text" id="user-name" placeholder="名無し" /><br />
-      <textarea id="comment-body" /></textarea><br />
-      <input id="submit-comment" type="button" value="コメントする" />
-    </div>
+    
     
     <div class="comment-view">
-      <div id="comments">
         <% unless @comments.nil? %>
         <% @comments.each do |comment| %>
-          <p><%= comment.body %> <%= User.find(comment.user_id).name %></p>
+          <p><%= comment.body %> by <%= User.find(comment.user_id).name %></p>
           <div class="ktest" data-id=<%= comment.id %>></div>
         <% end %>
         <% end %>
+      <div id="comments">
       </div>
     </div>
   <% else %>
@@ -45,9 +33,19 @@
     </ul>
   <% end %>
   
+  <div class="comment-form" id="list">
+      <input type="hidden" id="user-id" value="<%= current_user.name %>">
+      <input type="text" id="user-name" placeholder="名無し" /><br />
+      <textarea id="comment-body" /></textarea><br />
+      <input id="submit-comment" type="button" value="コメントする" />
+    </div>
+  
   <script type="text/javascript">
   
-    
+    window.onload = function() {
+            console.log("一番下に");
+            window.location.hash = "list"
+        };
     //window.onload = function(){
       //var sendid = null;
     //}
@@ -58,6 +56,8 @@
     }
     
     $(function(){
+      
+      
       sendid = null;
       $(function(){
          setInterval(update, 10000);
@@ -80,7 +80,7 @@
         });
         auto.done(function(res){
           $.each(res, function(i, res){
-            $("#comments").prepend('<p>' + escapeHTML(res.body) + ' by ' + escapeHTML(res.user_name) + '</p>');
+            $("#comments").append('<p>' + escapeHTML(res.body) + ' by ' + escapeHTML(res.user_name) + '</p>');
             sendid = res.id;
           })
           console.log("成功");
@@ -105,7 +105,11 @@
           });
           
           request.done(function(msg){
-            var lastid = $('.ktest:last').data('id');
+            if (sendid == null){
+              var lastid = $('.ktest:last').data('id');
+            } else {
+              var lastid = sendid
+            };
             console.log(lastid);
             $.ajax({
               type: "GET",
@@ -121,7 +125,7 @@
               $.each(res, function(i, res){
                 console.log(res.body);
                 // $("#comments").prepend('<p>' + escapeHTML(res.body) + ' by ' + escapeHTML(res.user_name) + '</p>');
-                $("#comments").prepend('<p>' + escapeHTML(res.body) + ' by ' + escapeHTML(res.user_name) + '</p>');
+                $("#comments").append('<p>' + escapeHTML(res.body) + ' by ' + escapeHTML(res.user_name) + '</p>');
                 sendid = res.id;
                 //console.log(sendid);
               })
