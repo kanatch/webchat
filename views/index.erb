@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>掲示板アプリでAjax</title>
+  <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+  
+  <script>
+    window.addEventListener('DOMContentLoaded', function(){
+			//var sendid = null;
+    	alert("よみこれたよ");
+		});
+</script>
+</head>
+<body style="width:60%;margin:0 auto;text-align:center;">
+  <h1>掲示板アプリでAjax</h1>
+  <% if !current_user.nil? %>
+    <ul>
+      <li>こんにちは<%= current_user.name %>さん</li>
+      <li><a href="/signout">ログアウト</a></li>
+    </ul>
+    
+    <div class="comment-form" id="list">
+      <input type="hidden" id="user-id" value="<%= current_user.name %>">
+      <input type="text" id="user-name" placeholder="名無し" /><br />
+      <textarea id="comment-body" /></textarea><br />
+      <input id="submit-comment" type="button" value="コメントする" />
+    </div>
+    
+    <div class="comment-view">
+      <div id="comments">
+        <% unless @comments.nil? %>
+        <% @comments.each do |comment| %>
+          <p><%= comment.body %> <%= User.find(comment.user_id).name %></p>
+          <div class="ktest" data-id=<%= comment.id %>></div>
+        <% end %>
+        <% end %>
+      </div>
+    </div>
+  <% else %>
+    <ul>
+      <li>新規ユーザーですか？</li>
+      <li><a href="/signin">ログイン</a></li>
+      <li><a href="/signup">新規登録</a></li>
+    </ul>
+  <% end %>
+  
+  <script type="text/javascript">
+  
+    
+    //window.onload = function(){
+      //var sendid = null;
+    //}
+    
+    
+    function escapeHTML(s) {
+      return $('<div>').text(s).html();
+    }
+    
+    $(function(){
+      sendid = null;
+      $(function(){
+         setInterval(update, 10000);
+      });
+      function update(){
+        console.log(sendid);
+        if (sendid == null){
+          var lastid = $('.ktest:last').data('id');
+        } else {
+          var lastid = sendid
+        };
+        // console.log(lastid);
+        var auto = $. ajax({
+          type: "GET",
+          url: "/comments/last",
+          dataType: "json",
+          data: {
+            last_id: lastid
+          }
+        });
+        auto.done(function(res){
+          $.each(res, function(i, res){
+            $("#comments").prepend('<p>' + escapeHTML(res.body) + ' by ' + escapeHTML(res.user_name) + '</p>');
+            sendid = res.id;
+          })
+          console.log("成功");
+        });
+      }
+      
+      $("#submit-comment").click(function(){
+          console.log("click!");
+          var comment = $("#comment-body").val();
+          // var userName = $("#user-name").val();
+          var userId = $("#user-id").val();
+          console.log(userId);
+          // if(userName.length == 0) userName = "名無し" ;
+          var request = $.ajax({
+            type: "POST",
+            url: "/comment",
+            data: {
+              body: comment,
+              // user_name: userName,
+              user_id: userId
+            }
+          });
+          
+          request.done(function(msg){
+            var lastid = $('.ktest:last').data('id');
+            console.log(lastid);
+            $.ajax({
+              type: "GET",
+              url: "/comments/last",
+              dataType: "json",
+              data: {
+                last_id: lastid
+              }
+            })
+          
+            .done(function(res){
+              console.log("done!!");
+              $.each(res, function(i, res){
+                console.log(res.body);
+                // $("#comments").prepend('<p>' + escapeHTML(res.body) + ' by ' + escapeHTML(res.user_name) + '</p>');
+                $("#comments").prepend('<p>' + escapeHTML(res.body) + ' by ' + escapeHTML(res.user_name) + '</p>');
+                sendid = res.id;
+                //console.log(sendid);
+              })
+              console.log(sendid);
+              console.log("送信");
+          });
+        });
+      });
+    });
+  </script>
+</body>
+</html>
